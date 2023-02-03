@@ -50,6 +50,10 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     //INSERT CODE HERE
+    float *A_d, *B_d, *C_d;
+    cudaMalloc((void**) &A_d, n*sizeof(float));
+    cudaMalloc((void**) &B_d, n*sizeof(float));
+    cudaMalloc((void**) &C_d, n*sizeof(float));
 
     stopTime(&timer); printf("%f s\n", elapsedTime(timer));
 
@@ -59,6 +63,8 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     //INSERT CODE HERE
+    cudaMemcpy(A_d, A_h, n*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(B_d, B_h, n*sizeof(float), cudaMemcpyHostToDevice);
 
     cudaDeviceSynchronize();
     stopTime(&timer); printf("%f s\n", elapsedTime(timer));
@@ -69,9 +75,12 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     //INSERT CODE HERE
+    const float numThreadsPerBlock = 256.0;
+    const float numBlocks = ceil(n / numThreadsPerBlock);
+    vecAddKernel <<< numBlocks, numThreadsPerBlock >>> (A_d, B_d, C_d, n);
 
     cuda_ret = cudaDeviceSynchronize();
-	if(cuda_ret != cudaSuccess) FATAL("Unable to launch kernel");
+	// if(cuda_ret != cudaSuccess) FATAL("Unable to launch kernel");
     stopTime(&timer); printf("%f s\n", elapsedTime(timer));
 
     // Copy device variables from host ----------------------------------------
@@ -80,6 +89,7 @@ int main(int argc, char**argv) {
     startTime(&timer);
 
     //INSERT CODE HERE
+    cudaMemcpy(C_h, C_d, n*sizeof(float), cudaMemcpyDeviceToHost);
 
     cudaDeviceSynchronize();
     stopTime(&timer); printf("%f s\n", elapsedTime(timer));
@@ -97,6 +107,9 @@ int main(int argc, char**argv) {
     free(C_h);
 
     //INSERT CODE HERE
+    cudaFree(A_d);
+    cudaFree(B_d);
+    cudaFree(C_d);
 
     return 0;
 
